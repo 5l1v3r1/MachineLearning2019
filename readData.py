@@ -1,11 +1,13 @@
-from matplotlib.pyplot import plot
+from matplotlib.pyplot import plot, show
 
-data = {}
+def plot_data(data: [float], max_len: int):
+    plot(range((min(max_len, len(data))), data[:min(len(data), max_len)])
+    show()
 
-for name in ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']:
-	with open(name + '.txt') as f:
-		data[name] = [ float(x) for x in f.readlines() ]
+def read_data(name: str):
+    with open(name + '.txt') as f:
+        return [float(x) for x in f.readlines()]
 
-print('data read')
-
-plot(range(0, len(data['abdomen1'])), data['abdomen1'])
+if __name__ == '__main__':
+    for name in ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']:
+        plot_data(read_data(name), 2000)
