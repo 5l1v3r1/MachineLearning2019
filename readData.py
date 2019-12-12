@@ -1,13 +1,34 @@
-from matplotlib.pyplot import plot, show
+import matplotlib.pyplot as plt
 
-def plot_data(data: [float], max_len: int):
-    plot(range((min(max_len, len(data))), data[:min(len(data), max_len)])
-    show()
+files = ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']
 
-def read_data(name: str):
-    with open(name + '.txt') as f:
+
+def add_plot(data: [float], max_len: int, ax: plt.Axes):
+    ax.plot(range(min(max_len, len(data))), data[:min(len(data), max_len)])
+
+
+def plot_data(data: [[float]]):
+    f, ax = plt.subplots(len(files))
+    for i, name in zip(range(len(files)), files):
+        add_plot(data[i], 2000, ax[i])
+    plt.show()
+
+
+def read_data(file_name: str):
+    with open(file_name + '.txt') as f:
         return [float(x) for x in f.readlines()]
 
+
 if __name__ == '__main__':
-    for name in ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']:
-        plot_data(read_data(name), 2000)
+    data = [read_data(file_name) for file_name in files]
+
+    # Plot given data
+    plot_data(data)
+
+    # Wavelet transform
+
+    # Plot Transformed data
+
+    # Transform back
+
+    # Plot output data
