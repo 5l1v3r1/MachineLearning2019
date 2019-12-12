@@ -23,6 +23,7 @@ def plot_data(data: [[float]], title: str = ''):
         add_plot(data[i], 2000, ax[i])
         ax[i].set_title(name)
     plt.draw()
+    print('Drawn plot:', title)
 
 
 # Normalize input data
@@ -54,9 +55,9 @@ if __name__ == '__main__':
     plot_data(data, 'Normalized data')
 
     # Wavelet transform
-    w_style = 'haar'
+    # w_style = 'haar'
     # w_style = 'bior1.1'
-    # w_style = 'db1'
+    w_style = 'db1'
 
     data = [wavelet(d, w_style) for d in data]
 
@@ -65,12 +66,12 @@ if __name__ == '__main__':
     plot_data([x for _, x in data], 'Wavelet detail data')
 
     # Transform back
-    without_detail = inverse_wavelet([d for d, _ in data], style=w_style)
     with_detail = inverse_wavelet([d for d, _ in data], [d for _, d in data], style=w_style)
-    plot_data(without_detail, title='Re-transformed data ({}, without detail)'.format(w_style))
-    plot_data(with_detail, title='Re-transformed data ({}, with detail)'.format(w_style))
+    without_detail = inverse_wavelet([d for d, _ in data], style=w_style)
 
-    plot_data([a - b for a, b in zip(with_detail, without_detail)])
     # Plot output data
+    plot_data(with_detail, title='Re-transformed data ({}, with detail)'.format(w_style))
+    plot_data(without_detail, title='Re-transformed data ({}, without detail)'.format(w_style))
+    plot_data([a - b for a, b in zip(with_detail, without_detail)], title='Difference re-transforms with/without detail')
 
     plt.show()
