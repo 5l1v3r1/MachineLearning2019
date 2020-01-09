@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import pywt
+import pywt 
 
 files = ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']
 
@@ -44,6 +44,23 @@ def inverse_wavelet(data: [float], detail: [float] = None, style: str = 'haar'):
     return pywt.idwt(cA=data, cD=detail, wavelet=style)
 
 
+def stationary_wavelet(data: [float], style: str = 'haar'):
+    l = pywt.swt(data, style)
+    al, dl = [], []
+    for a, d in l:
+        al.append(a)
+        dl.append(d)
+    return a, d
+
+
+def inverse_stationary_wavelet(data: [float], detail: [float] = [], style: str = 'haar'):
+    print('a', data)
+    print('d', detail)
+    if len(detail) == 0:
+        detail = [0 for _ in data]
+    return pywt.iswt(coeffs=list(zip(data, detail)), wavelet=style)
+
+
 if __name__ == '__main__':
     data = [read_data(file_name) for file_name in files]
 
@@ -59,15 +76,16 @@ if __name__ == '__main__':
     # w_style = 'bior1.1'
     w_style = 'db1'
 
-    data = [wavelet(d, w_style) for d in data]
+    data = [stationary_wavelet(d, w_style) for d in data]
+    # data = [([], [])]
 
     # Plot Transformed data
     plot_data([x for x, _ in data], 'Wavelet ({}) adjusted data'.format(w_style))
     plot_data([x for _, x in data], 'Wavelet detail data')
 
     # Transform back
-    with_detail = inverse_wavelet([d for d, _ in data], [d for _, d in data], style=w_style)
-    without_detail = inverse_wavelet([d for d, _ in data], style=w_style)
+    with_detail = [inverse_stationary_wavelet(l[0], l[1], style=w_style) for l in data]
+    without_detail = [inverse_stationary_wavelet(l[0], style=w_style) for l in data]
 
     # Plot output data
     plot_data(with_detail, title='Re-transformed data ({}, with detail)'.format(w_style))
