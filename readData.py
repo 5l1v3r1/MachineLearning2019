@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-import pywt 
+import pywt
+import adaptfilt
 
 files = ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']
 
@@ -59,6 +60,11 @@ def inverse_stationary_wavelet(data: [float], detail: [float] = [], style: str =
     if len(detail) == 0:
         detail = [0 for _ in data]
     return pywt.iswt(coeffs=list(zip(data, detail)), wavelet=style)
+
+def adaptive_filtering(original_input, ref_input):
+	step_size = 0.0004
+	no_filter_taps = 100
+	y, e, w = lms(original_input, ref_input, no_filter_taps, step_size);
 
 
 if __name__ == '__main__':
