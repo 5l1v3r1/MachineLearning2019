@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import pywt 
+import pywt
 
 files = ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']
 
@@ -22,6 +22,13 @@ def plot_data(data: [[float]], title: str = ''):
     for i, name in zip(range(len(files)), files):
         add_plot(data[i], 2000, ax[i])
         ax[i].set_title(name)
+    plt.draw()
+    print('Drawn plot:', title)
+
+
+def plot_single_data(data: [float], title: str = ''):
+    plt.figure()
+    plt.plot(list(range(2000)), data[:2000])
     plt.draw()
     print('Drawn plot:', title)
 
@@ -55,9 +62,10 @@ def stationary_wavelet(data: [float], style: str = 'haar'):
 
 def inverse_stationary_wavelet(data: [float], detail: [float] = [], style: str = 'haar'):
     print('a', data)
-    print('d', detail)
     if len(detail) == 0:
-        detail = [0 for _ in data]
+        detail = [[0 for _ in wave] for wave in data]
+    print('d', detail)
+    print(len(detail))
     return pywt.iswt(coeffs=list(zip(data, detail)), wavelet=style)
 
 
@@ -73,8 +81,8 @@ if __name__ == '__main__':
 
     # Wavelet transform
     # w_style = 'haar'
-    # w_style = 'bior1.1'
-    w_style = 'db1'
+    w_style = 'bior1.1'
+    # w_style = 'db1'
 
     data = [stationary_wavelet(d, w_style) for d in data]
     # data = [([], [])]
@@ -84,12 +92,13 @@ if __name__ == '__main__':
     plot_data([x for _, x in data], 'Wavelet detail data')
 
     # Transform back
-    with_detail = [inverse_stationary_wavelet(l[0], l[1], style=w_style) for l in data]
-    without_detail = [inverse_stationary_wavelet(l[0], style=w_style) for l in data]
-
+    with_detail = inverse_stationary_wavelet([d for d, _ in data], [d for _, d in data], style=w_style)
+    without_detail = inverse_stationary_wavelet([d for d, _ in data], style=w_style)
+    print(with_detail)
     # Plot output data
-    plot_data(with_detail, title='Re-transformed data ({}, with detail)'.format(w_style))
-    plot_data(without_detail, title='Re-transformed data ({}, without detail)'.format(w_style))
-    plot_data([a - b for a, b in zip(with_detail, without_detail)], title='Difference re-transforms with/without detail')
+    plot_single_data(with_detail, title='Re-transformed data ({}, with detail)'.format(w_style))
+    plot_single_data(without_detail, title='Re-transformed data ({}, without detail)'.format(w_style))
+    # plot_data([a - b for a, b in zip(with_detail, without_detail)],
+    #           title='Difference re-transforms with/without detail')
 
     plt.show()
