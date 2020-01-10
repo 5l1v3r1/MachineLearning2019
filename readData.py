@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
-import pywt 
+import pywt
+from padasip.filters.lms import FilterLMS
+from ssnf import ssnf
 
 files = ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']
+DECOMPOSITION_SCALE = 5
 
 
 # Data I/O
@@ -52,25 +55,41 @@ def inverse_wavelet(data: [float], detail: [float] = None, style: str = 'haar'):
 
 
 def stationary_wavelet(data: [float], style: str = 'haar'):
-    l = pywt.swt(data, style)
-    al, dl = [], []
-    for a, d in l:
-        al.append(a)
-        dl.append(d)
-    return a, d
+    return pywt.swt(data, style, level=DECOMPOSITION_SCALE)
 
 
-def inverse_stationary_wavelet(data: [float], detail: [float] = [], style: str = 'haar'):
-    print('a', data)
-    print('d', detail)
-    if len(detail) == 0:
-        detail = [0 for _ in data]
-    return pywt.iswt(coeffs=list(zip(data, detail)), wavelet=style)
+def inverse_stationary_wavelet(data: [float], style: str = 'haar'):
+    return pywt.iswt(coeffs=data, wavelet=style)
+
 
 def adaptive_filtering(original_input, ref_input):
-	step_size = 0.0004
-	no_filter_taps = 100
-	y, e, w = lms(original_input, ref_input, no_filter_taps, step_size);
+    step_size = 0.0004
+    no_filter_taps = 100
+    weights = 'random'
+    f = FilterLMS(original_input, step_size, w=weights)
+    y, e, w = f.run(ref_input, original_input)
+
+
+def use_d_wavelet(data):
+    data = [stationary_wavelet(d, w_style) for d in data]
+    # data = [([], [])]
+
+    # Plot Transformed data
+    plot_data([x for x, _ in data], 'Wavelet ({}) adjusted data'.format(w_style))
+    plot_data([x for _, x in data], 'Wavelet detail data')
+
+    # Transform back
+    with_detail = inverse_wavelet([d for d, _ in data], [d for _, d in data], style=w_style)
+    without_detail = inverse_wavelet([d for d, _ in data], style=w_style)
+    return without_detail
+
+
+def use_s_wavelet(data):
+    data = [stationary_wavelet(d, w_style) for d in data]
+    thresholds = [0 for x in range(DECOMPOSITION_SCALE)]
+    data = [ssnf([x[0] for x in d], scales=DECOMPOSITION_SCALE, noise_thresholds=thresholds) for d in data]
+    # Transform back
+    return [inverse_stationary_wavelet(d, style=w_style) for d in data]
 
 
 if __name__ == '__main__':
@@ -85,23 +104,13 @@ if __name__ == '__main__':
 
     # Wavelet transform
     # w_style = 'haar'
-    w_style = 'bior1.1'
+    w_style = 'bior1.5'
     # w_style = 'db1'
 
-    data = [stationary_wavelet(d, w_style) for d in data]
-    # data = [([], [])]
+    data = use_s_wavelet(data)
 
-    # Plot Transformed data
-    plot_data([x for x, _ in data], 'Wavelet ({}) adjusted data'.format(w_style))
-    plot_data([x for _, x in data], 'Wavelet detail data')
-
-    # Transform back
-    with_detail = inverse_stationary_wavelet([d for d, _ in data], [d for _, d in data], style=w_style)
-    without_detail = inverse_stationary_wavelet([d for d, _ in data], style=w_style)
-    print(with_detail)
     # Plot output data
-    plot_single_data(with_detail, title='Re-transformed data ({}, with detail)'.format(w_style))
-    plot_single_data(without_detail, title='Re-transformed data ({}, without detail)'.format(w_style))
+    plot_data(data, title='Re-transformed data ({}, with detail)'.format(w_style))
     # plot_data([a - b for a, b in zip(with_detail, without_detail)],
     #           title='Difference re-transforms with/without detail')
 
