@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pywt
 from padasip.filters.lms import FilterLMS
 from ssnf import ssnf
+import numpy as np
 
 files = ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']
 DECOMPOSITION_SCALE = 5
@@ -62,14 +63,6 @@ def inverse_stationary_wavelet(data: [float], style: str = 'haar'):
     return pywt.iswt(coeffs=data, wavelet=style)
 
 
-def adaptive_filtering(original_input, ref_input):
-    step_size = 0.0004
-    no_filter_taps = 100
-    weights = 'random'
-    f = FilterLMS(original_input, step_size, w=weights)
-    y, e, w = f.run(ref_input, original_input)
-
-
 def use_d_wavelet(data):
     data = [stationary_wavelet(d, w_style) for d in data]
     # data = [([], [])]
@@ -92,6 +85,17 @@ def use_s_wavelet(data):
     return [inverse_stationary_wavelet(d, style=w_style) for d in data]
 
 
+# LMS
+def adaptive_filtering(original_input, ref_input):
+    print('original_input', len(original_input))
+    print('ref_input', len(ref_input))
+    step_size = 0.1  # 0.0004
+    no_filter_taps = 100
+    weights = 'random'
+    f = FilterLMS(len(original_input), step_size, w=weights)
+    return f.run(ref_input, original_input)
+
+
 if __name__ == '__main__':
     data = [read_data(file_name) for file_name in files]
 
@@ -101,6 +105,10 @@ if __name__ == '__main__':
     # Normalize data
     data = [normalize_data(d) for d in data]
     plot_data(data, 'Normalized data')
+
+    # LMS
+    # y, _, _ = adaptive_filtering(data[0], data[3:5])
+    # plot_single_data(y)
 
     # Wavelet transform
     # w_style = 'haar'
