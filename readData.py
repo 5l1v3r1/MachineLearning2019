@@ -3,9 +3,11 @@ import pywt
 from padasip.filters.lms import FilterLMS
 from ssnf import ssnf
 import numpy as np
+from scipy import signal
 
 files = ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']
 DECOMPOSITION_SCALE = 5
+FIGURE_RANGE = 20000
 
 
 # Data I/O
@@ -24,7 +26,7 @@ def plot_data(data: [[float]], title: str = ''):
     f.suptitle(title)
     plt.subplots_adjust(hspace=1)
     for i, name in zip(range(len(files)), files):
-        add_plot(data[i], 2000, ax[i])
+        add_plot(data[i], FIGURE_RANGE, ax[i])
         ax[i].set_title(name)
     plt.draw()
     print('Drawn plot:', title)
@@ -32,7 +34,7 @@ def plot_data(data: [[float]], title: str = ''):
 
 def plot_single_data(data: [float], title: str = ''):
     plt.figure()
-    plt.plot(list(range(2000)), data[:2000])
+    plt.plot(list(range(FIGURE_RANGE)), data[:FIGURE_RANGE])
     plt.draw()
     print('Drawn plot:', title)
 
@@ -43,6 +45,14 @@ def normalize_data(data):
     data = [d - mean for d in data]
     m = max(data)
     return [d / m for d in data]
+
+
+def high_pass_filter(data, perc=0.2):
+    return [d if abs(d) > (max(data) * perc) else 0 for d in data]
+
+
+def pass_filter(data, s=10, e=1000):
+    return s * [0] + data[s:e] + (len(data) - e) * [0]
 
 
 # Fourier transform
@@ -121,26 +131,43 @@ if __name__ == '__main__':
     # Plot given data
     plot_data(data, 'Given data')
 
+    # Butter high pass filter
+    sos = signal.butter(10, 0.6, 'hp', fs=1000, output='sos')
+    data = [signal.sosfilt(sos, d) for d in data]
+    plot_data(data, "Butter Filtered")
+
     # Normalize data
     data = [normalize_data(d) for d in data]
     plot_data(data, 'Normalized data')
 
-    # # FFT
-    # data_fft = fourier(data)
-    # plot_data(data_fft, "FFT")
-    #
+    # FFT
+    data_fft = fourier(data)
+    plot_data(data_fft, "FFT")
+
     # data_fft_thorax = [(a+b)/2 for a, b in zip(data_fft[0], data_fft[1])]
     # data_fft_abdomen = [(a+b+c)/3 for a, b, c in zip(data_fft[2], data_fft[3], data_fft[4])]
     # data_ifft = np.fft.ifft([a-t for a, t in zip(data_fft_abdomen, data_fft_thorax)])
     # plot_single_data(data_ifft, "IFFT")
+    # data_fft = [[a - b for a, b in zip(d, pass_filter(d, 300, 1000))] for d in data_fft]
+    data_fft = [pass_filter(d, 300, 1000) for d in data_fft]
+    plot_data(data_fft, "FFT Highpass")
+    data_ifft = [np.fft.ifft(d) for d in data_fft]
+    plot_data(data_ifft, "IFFT transformed")
 
     # Wavelet transform
     # w_style = 'haar'
     w_style = 'bior1.5'
     # w_style = 'db1'
 
-    data = use_s_wavelet(data)
+    data_s_wavelet = use_s_wavelet(data)
+    plot_data(data_s_wavelet, "With swt")
 
+    data_ssnf = [x * a for x, a in zip(data_s_wavelet[4], data[4])]
+    plot_single_data(data_ssnf, "SSNF on wavelets of data[4]")
+    data_ssnf = high_pass_filter(normalize_data(data_ssnf), 0.15)
+    plot_single_data(data_ssnf, "SSNF on wavelets of data[4], with highpass filter")
+    # plot_single_data(data[4])
+    # plot_single_data([data[4][i] if data_ssnf[i] == 0 else 0 for i in range(len(data_ssnf))])
     # Plot output data
     plot_data(data, title='Re-transformed data ({}, with detail)'.format(w_style))
     # plot_data([a - b for a, b in zip(with_detail, without_detail)],
