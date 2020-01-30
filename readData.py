@@ -45,6 +45,11 @@ def normalize_data(data):
     return [d / m for d in data]
 
 
+# Fourier transform
+def fourier(data: [float]):
+    return [list(np.fft.fft(d)) for d in data]
+
+
 # Wavelet transform
 def wavelet(data: [float], style: str = 'haar'):
     a, d = pywt.dwt(data, style)
@@ -63,7 +68,7 @@ def inverse_stationary_wavelet(data: [float], style: str = 'haar'):
     return pywt.iswt(coeffs=data, wavelet=style)
 
 
-def use_d_wavelet(data):
+def use_d_wavelet(data: [[float]]):
     data = [stationary_wavelet(d, w_style) for d in data]
     # data = [([], [])]
 
@@ -79,7 +84,20 @@ def use_d_wavelet(data):
 
 def use_s_wavelet(data):
     data = [stationary_wavelet(d, w_style) for d in data]
-    thresholds = [0 for x in range(DECOMPOSITION_SCALE)]
+    print(np.shape(data))
+    # data = [[y[0] for y in x] for x in data]
+    # print(np.shape(data))
+    #
+    # # LMS
+    # results = []
+    # for reference_data in data[3]:
+    #     results.append([])
+    #     for d in range(DECOMPOSITION_SCALE):
+    #         y, _, _ = adaptive_filtering(data[0], reference_data[d])
+    #         results[d].append(y)
+    # # plot_single_data(y)
+
+    thresholds = [1000 for x in range(DECOMPOSITION_SCALE)]
     data = [ssnf([x[0] for x in d], scales=DECOMPOSITION_SCALE, noise_thresholds=thresholds) for d in data]
     # Transform back
     return [inverse_stationary_wavelet(d, style=w_style) for d in data]
@@ -87,12 +105,13 @@ def use_s_wavelet(data):
 
 # LMS
 def adaptive_filtering(original_input, ref_input):
-    print('original_input', len(original_input))
-    print('ref_input', len(ref_input))
+    print('original_input', np.shape(original_input))
+    print('ref_input', np.shape(ref_input))
+    original_input = np.transpose(original_input)
     step_size = 0.1  # 0.0004
     no_filter_taps = 100
     weights = 'random'
-    f = FilterLMS(len(original_input), step_size, w=weights)
+    f = FilterLMS(len(original_input[0]), step_size, w=weights)
     return f.run(ref_input, original_input)
 
 
@@ -106,9 +125,14 @@ if __name__ == '__main__':
     data = [normalize_data(d) for d in data]
     plot_data(data, 'Normalized data')
 
-    # LMS
-    # y, _, _ = adaptive_filtering(data[0], data[3:5])
-    # plot_single_data(y)
+    # # FFT
+    # data_fft = fourier(data)
+    # plot_data(data_fft, "FFT")
+    #
+    # data_fft_thorax = [(a+b)/2 for a, b in zip(data_fft[0], data_fft[1])]
+    # data_fft_abdomen = [(a+b+c)/3 for a, b, c in zip(data_fft[2], data_fft[3], data_fft[4])]
+    # data_ifft = np.fft.ifft([a-t for a, t in zip(data_fft_abdomen, data_fft_thorax)])
+    # plot_single_data(data_ifft, "IFFT")
 
     # Wavelet transform
     # w_style = 'haar'

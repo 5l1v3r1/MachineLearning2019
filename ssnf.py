@@ -30,7 +30,7 @@ def ssnf(W: [[float]], scales: int, noise_thresholds: [float]):
     n_length = len(W[0])
     mask = []
 
-    for m in range(scales):
+    for m in range(scales-1):
         mask.append([0 for _ in range(n_length)])
 
         corr2 = [corr(W, m, n, 2) for n in range(n_length)]
