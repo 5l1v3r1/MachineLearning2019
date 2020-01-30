@@ -21,20 +21,20 @@ def add_plot(data: [float], max_len: int, ax: plt.Axes):
     ax.plot(range(min(max_len, len(data))), data[:min(len(data), max_len)])
 
 
-def plot_data(data: [[float]], title: str = ''):
+def plot_data(data: [[float]], title: str = '', r=FIGURE_RANGE):
     f, ax = plt.subplots(len(files))
     f.suptitle(title)
     plt.subplots_adjust(hspace=1)
     for i, name in zip(range(len(files)), files):
-        add_plot(data[i], FIGURE_RANGE, ax[i])
+        add_plot(data[i], r, ax[i])
         ax[i].set_title(name)
     plt.draw()
     print('Drawn plot:', title)
 
 
-def plot_single_data(data: [float], title: str = ''):
+def plot_single_data(data: [float], title: str = '', r=FIGURE_RANGE):
     plt.figure()
-    plt.plot(list(range(FIGURE_RANGE)), data[:FIGURE_RANGE])
+    plt.plot(list(range(r)), data[:r])
     plt.draw()
     print('Drawn plot:', title)
 
@@ -107,8 +107,8 @@ def use_s_wavelet(data):
     #         results[d].append(y)
     # # plot_single_data(y)
 
-    thresholds = [1000 for x in range(DECOMPOSITION_SCALE)]
-    data = [ssnf([x[0] for x in d], scales=DECOMPOSITION_SCALE, noise_thresholds=thresholds) for d in data]
+    thresholds = [10 for x in range(DECOMPOSITION_SCALE)]
+    data = [ssnf([x[1] for x in d], scales=DECOMPOSITION_SCALE, noise_thresholds=thresholds) for d in data]
     # Transform back
     return [inverse_stationary_wavelet(d, style=w_style) for d in data]
 
@@ -142,15 +142,15 @@ if __name__ == '__main__':
 
     # FFT
     data_fft = fourier(data)
-    plot_data(data_fft, "FFT")
+    plot_data(data_fft, "FFT", 1000)
 
     # data_fft_thorax = [(a+b)/2 for a, b in zip(data_fft[0], data_fft[1])]
     # data_fft_abdomen = [(a+b+c)/3 for a, b, c in zip(data_fft[2], data_fft[3], data_fft[4])]
     # data_ifft = np.fft.ifft([a-t for a, t in zip(data_fft_abdomen, data_fft_thorax)])
     # plot_single_data(data_ifft, "IFFT")
     # data_fft = [[a - b for a, b in zip(d, pass_filter(d, 300, 1000))] for d in data_fft]
-    data_fft = [pass_filter(d, 300, 1000) for d in data_fft]
-    plot_data(data_fft, "FFT Highpass")
+    data_fft = [pass_filter(d, 100, 1000) for d in data_fft]
+    plot_data(data_fft, "FFT Highpass", 1000)
     data_ifft = [np.fft.ifft(d) for d in data_fft]
     plot_data(data_ifft, "IFFT transformed")
 
