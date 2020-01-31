@@ -7,7 +7,7 @@ from scipy import signal
 
 files = ['abdomen1', 'abdomen2', 'abdomen3', 'thorax1', 'thorax2']
 DECOMPOSITION_SCALE = 5
-FIGURE_RANGE = 20000
+FIGURE_RANGE = 2000
 
 
 # Data I/O
@@ -35,6 +35,8 @@ def plot_data(data: [[float]], title: str = '', r=FIGURE_RANGE):
 def plot_single_data(data: [float], title: str = '', r=FIGURE_RANGE):
     plt.figure()
     plt.plot(list(range(r)), data[:r])
+    if title:
+        plt.title(title)
     plt.draw()
     print('Drawn plot:', title)
 
@@ -92,23 +94,21 @@ def use_d_wavelet(data: [[float]]):
     return without_detail
 
 
+def ssnf2(data):
+    results = []
+    for w1, w2 in zip(data, data[1:]):
+        mask = [1 if (a * b) > 0.01 else 0 for a, b in zip(w1, w2)]
+        d = [m * d for m, d in zip(mask, w1)]
+        results.append((d, len(d)*[0]))
+    # results.append(data[-1])
+    return results
+
+
 def use_s_wavelet(data):
     data = [stationary_wavelet(d, w_style) for d in data]
-    print(np.shape(data))
-    # data = [[y[0] for y in x] for x in data]
-    # print(np.shape(data))
-    #
-    # # LMS
-    # results = []
-    # for reference_data in data[3]:
-    #     results.append([])
-    #     for d in range(DECOMPOSITION_SCALE):
-    #         y, _, _ = adaptive_filtering(data[0], reference_data[d])
-    #         results[d].append(y)
-    # # plot_single_data(y)
-
-    thresholds = [10 for x in range(DECOMPOSITION_SCALE)]
-    data = [ssnf([x[1] for x in d], scales=DECOMPOSITION_SCALE, noise_thresholds=thresholds) for d in data]
+    # thresholds = [10 for x in range(DECOMPOSITION_SCALE)]
+    # data = [ssnf([x[1] for x in d], scales=DECOMPOSITION_SCALE, noise_thresholds=thresholds) for d in data]
+    data = [ssnf2([x[1] for x in d]) for d in data]
     # Transform back
     return [inverse_stationary_wavelet(d, style=w_style) for d in data]
 
@@ -143,12 +143,6 @@ if __name__ == '__main__':
     # FFT
     data_fft = fourier(data)
     plot_data(data_fft, "FFT", 1000)
-
-    # data_fft_thorax = [(a+b)/2 for a, b in zip(data_fft[0], data_fft[1])]
-    # data_fft_abdomen = [(a+b+c)/3 for a, b, c in zip(data_fft[2], data_fft[3], data_fft[4])]
-    # data_ifft = np.fft.ifft([a-t for a, t in zip(data_fft_abdomen, data_fft_thorax)])
-    # plot_single_data(data_ifft, "IFFT")
-    # data_fft = [[a - b for a, b in zip(d, pass_filter(d, 300, 1000))] for d in data_fft]
     data_fft = [pass_filter(d, 100, 1000) for d in data_fft]
     plot_data(data_fft, "FFT Highpass", 1000)
     data_ifft = [np.fft.ifft(d) for d in data_fft]
@@ -161,6 +155,14 @@ if __name__ == '__main__':
 
     data_s_wavelet = use_s_wavelet(data)
     plot_data(data_s_wavelet, "With swt")
+
+    _data = data_s_wavelet
+    data_a = [(d1+d2+d3)/3 for d1, d2, d3 in zip(_data[0], _data[1], _data[2])]
+    data_t = [(d1+d2)/2 for d1, d2 in zip(_data[3], _data[4])]
+    plot_single_data(data_a, "AVG Abdomen")
+    plot_single_data(data_t, "AVG Thorax")
+    plot_single_data([a-t for a, t in zip(data_a, data_t)], "Subtracting thorax from abdomen")
+    plt.show()
 
     data_ssnf = [x * a for x, a in zip(data_s_wavelet[4], data[4])]
     plot_single_data(data_ssnf, "SSNF on wavelets of data[4]")
