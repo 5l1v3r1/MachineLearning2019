@@ -63,6 +63,9 @@ if doPlot == true
     title('abdomen3');
 end
 
+% adaptiveNoiseCancellationExampleApp
+signalAnalyzer
+
 % normalize/detrend/smoothdata
 function result = preprocess(data)
     result = data;
@@ -73,6 +76,3 @@ function result = preprocess(data)
 %     result = filter(b, a, result);
     result = normalize(result);
 end
-
-% adaptiveNoiseCancellationExampleApp
-signalAnalyzer
